@@ -1,0 +1,274 @@
+def blox_solver(ar):
+    
+    class Queue():
+        
+        def __init__(self):
+            self.q = []
+
+        def put(self, x):
+            self.q.insert(0,x)
+
+        def pop(self):
+            return self.q.pop()
+    
+    
+    class Block():
+
+        def __init__(self, lvl, x, y, orient, parent, prev_step):
+            
+            self.lvl = lvl
+            self.parent = parent
+            self.prev_step = prev_step
+            self.x = x
+            self.y = y
+            self.orient = orient
+
+            
+        def left_able(self):            # check if left step avaliable
+            
+            lvl = self.lvl
+            x = self.x
+            y = self.y
+            orient = self.orient
+
+            if orient == 'z':                                       # block stands (Z axis)
+                if y > 1 and lvl[x][y-1]==lvl[x][y-2]=='1':
+                    return (x, y-2, 'y')                            # new state 
+                
+            elif orient == 'y':                                     # block lies by Y axis
+                if y > 0 and lvl[x][y-1] == '1':
+                    return (x, y-1, 'z')                            # new state
+                
+            else:                                                   # block lies by X axis
+                if y > 0 and lvl[x][y-1] == lvl[x+1][y-1] == '1':    
+                    return (x, y-1, 'x')                            # new state
+                
+            return False
+
+
+        def right_able(self):
+            
+            lvl = self.lvl
+            x = self.x
+            y = self.y
+            orient = self.orient
+
+            if orient == 'z':                                      
+                if y < len(lvl[x])-2 and lvl[x][y+1]==lvl[x][y+2]=='1':
+                    return (x, y+1, 'y')  
+                
+            elif orient == 'y':                                     
+                if y < len(lvl[x])-2 and lvl[x][y+2] == '1':
+                    return (x, y+2, 'z')   
+                
+            else:                                                   
+                if y < len(lvl[x])-1 and lvl[x][y+1] == lvl[x+1][y+1] == '1':    
+                    return (x, y+1, 'x')                            
+
+            return False
+
+
+        def down_able(self):
+            
+            lvl = self.lvl
+            x = self.x
+            y = self.y
+            orient = self.orient
+            
+            if orient == 'z':                                       
+                if x < len(lvl)-2 and lvl[x+1][y]==lvl[x+2][y]=='1':
+                    return (x+1, y, 'x')
+                
+            elif orient == 'y':                                     
+                if x < len(lvl)-1 and lvl[x+1][y] == lvl[x+1][y+1] == '1':
+                    return (x+1, y, 'y')
+                
+            else:                                                   
+                if x < len(lvl)-2 and lvl[x+2][y] == '1':    
+                    return (x+2, y, 'z')
+
+            return False
+
+
+        def up_able(self):
+            
+            lvl = self.lvl
+            x = self.x
+            y = self.y
+            orient = self.orient
+
+            if orient == 'z':                                       
+                if x > 1 and lvl[x-1][y]==lvl[x-2][y]=='1':
+                    return (x-2, y, 'x')
+                
+            elif orient == 'y':                                     
+                if x > 0 and lvl[x-1][y] == lvl[x-1][y+1] == '1':
+                    return (x-1, y, 'y')
+                
+            else:                                                  
+                if x > 0 and lvl[x-1][y] == '1':    
+                    return (x-1, y, 'z')
+
+            return False
+
+
+        def get_ables(self, visited):           # return avaliable steps
+            
+            x = self.x
+            y = self.y
+            orient = self.orient
+            ret = []
+
+            new_state = self.left_able() 
+            
+            if new_state and not(new_state in visited):
+                ret.append('L')
+                
+            new_state = self.right_able() 
+            
+            if new_state and not(new_state in visited):
+                ret.append('R')
+                
+            new_state = self.down_able() 
+            
+            if new_state and not(new_state in visited):
+                ret.append('D')
+                
+            new_state = self.up_able()
+            
+            if new_state and not(new_state in visited):
+                ret.append('U')
+                
+            return ret
+
+
+        def finish(self, outX, outY):       # check if next step can finish game
+            
+            x = self.x
+            y = self.y
+            orient = self.orient
+
+            if orient == 'z':
+                return False
+            
+            elif orient == 'y':
+                if x == outX:
+                    if y == outY-2:
+                        return 'R'
+                    elif y == outY+1:
+                        return 'L'
+                    else:
+                        return False
+                    
+            elif orient == 'x':
+                if y == outY:
+                    if x == outX-2:
+                        return 'D'
+                    elif x == outX+1:
+                        return 'U'
+                    else:
+                        return False
+
+
+        def step(self, s):          # return new block after step s
+            
+            lvl = self.lvl
+            x = self.x
+            y = self.y
+            orient = self.orient
+
+            if s == 'L': 
+                if orient == 'z':
+                    return Block(lvl, x, y-2, 'y', self, 'L')
+
+                elif orient == 'y':
+                    return Block(lvl, x, y-1, 'z', self, 'L')
+
+                else:
+                    return Block(lvl, x, y-1, 'x', self, 'L')
+
+            elif s == 'R': 
+                if orient == 'z':
+                    return Block(lvl, x, y+1, 'y', self, 'R')
+
+                elif orient == 'y':
+                    return Block(lvl, x, y+2, 'z', self, 'R')
+
+                else:
+                    return Block(lvl, x, y+1, 'x', self, 'R')
+
+            elif s == 'D': 
+                if orient == 'z':
+                    return Block(lvl, x+1, y, 'x', self, 'D')
+
+                elif orient == 'y':
+                    return Block(lvl, x+1, y, 'y', self, 'D')
+
+                else:
+                    return Block(lvl, x+2, y, 'z', self, 'D')
+
+            elif s == 'U': 
+                if orient == 'z':
+                    return Block(lvl, x-2, y, 'x', self, 'U')
+
+                elif orient == 'y':
+                    return Block(lvl, x-1, y, 'y', self, 'U')
+
+                else:
+                    return Block(lvl, x-1, y, 'z', self, 'U')
+        
+        
+    class Game():
+
+        def __init__(self, lvl):
+            self.lvl = lvl
+            
+            for x in range(len(lvl)):
+                for y in range(len(lvl[x])):
+                    
+                    if lvl[x][y] == 'X':
+                        self.outX = x
+                        self.outY = y
+                        self.lvl[x] = self.lvl[x][:y] + '1' + self.lvl[x][y+1:]
+
+                    if lvl[x][y] == 'B':
+                        self.inX = x
+                        self.inY = y
+                        self.lvl[x] = self.lvl[x][:y] + '1' + self.lvl[x][y+1:]
+
+            self.block = Block(lvl, self.inX, self.inY, 'z', None, None)
+            self.visited = {(self.block.x, self.block.y, 'z')}
+
+        def play(self):             # breadth-first search
+
+            queue = Queue()         # buffer for available steps
+            outX = self.outX
+            outY = self.outY
+            block = self.block
+            last_step = block.finish(outX, outY)            # if not yet == False
+
+            while not(last_step):
+                x = block.x
+                y = block.y
+                orient = block.orient
+
+                for s in block.get_ables(self.visited):
+                    new_block = block.step(s)
+                    queue.put(new_block)
+                
+                block = queue.pop()
+                self.visited.update([(block.x, block.y, block.orient)])
+                last_step = block.finish(outX, outY)
+
+            path = last_step                    # reversed path
+            prev_step = block.prev_step
+
+            while prev_step:
+                path += prev_step
+                block = block.parent
+                prev_step = block.prev_step
+            return path[::-1]
+
+    game = Game(ar)
+
+    return game.play()
